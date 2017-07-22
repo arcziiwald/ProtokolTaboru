@@ -1,5 +1,6 @@
 package com.example.android.protokoltaboru;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -39,16 +40,17 @@ import java.util.Locale;
 import static android.icu.lang.UCharacter.GraphemeClusterBreak.L;
 
 public class MainActivity extends AppCompatActivity {
+    private static final int MY_PERMISSIONS_REQUEST_READ_CONTACTS = 1;
     public static final int CAPTURE_IMAGE_FULLSIZE_ACTIVITY_REQUEST_CODE = 1777;
     private TextView twNazwaProtokolanta, twCzynnosc, twRodzaj, twZewnatrz, twZdjecie, twPrzestrzen, twZdjecie2, twWyposazenie;
     private EditText etPassword, etNrRej, etOpisUszk, etOpisUszk2, etOpisBrak;
     private RadioButton rbName1, rbName2, rbTabor, rbPrzekazanie, rbCiagnik, rbNaczepa, rbTak1, rbNie1, rbTak2, rbNie2,
-    rbTak3, rbNie3, rbTak4, rbNie4, rbTak5, rbNie5;
+            rbTak3, rbNie3, rbTak4, rbNie4, rbTak5, rbNie5;
     private Button buttonZdjecie, buttonZdjecie2, buttonZakoncz;
     private int imagePosition = 0;
     private Bitmap bitmap1, bitmap2, tmp;
     private ImageView iv;
-    private String name, password, czynnosc, nrRej, rodzaj, zdjecie1 = "null", zdjecie2="null", stanNaczepy = "Czy naczepa na zewnatrz ok? : ", stanPrzestrzeni = "Przestrzen ladunkowa ok? : ",
+    private String name, password, czynnosc, nrRej, rodzaj, zdjecie1 = "null", zdjecie2 = "null", stanNaczepy = "Czy naczepa na zewnatrz ok? : ", stanPrzestrzeni = "Przestrzen ladunkowa ok? : ",
             wyposazenie = "Czy wyposazenie naczepy jest kompletne? : ", opis;
     private boolean firstPicture = false, secondPicture = false;
     // LogCat tag
@@ -82,14 +84,22 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 // capture picture
                 imagePosition = 1;
-                captureImage();
+                if (isCameraAllowed()) {
+                    captureImage();
+                } else {
+                    requestPermission();
+                }
             }
         });
         buttonZdjecie2.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 imagePosition = 2;
-                captureImage();
+                if (isCameraAllowed()) {
+                    captureImage();
+                } else {
+                    requestPermission();
+                }
             }
         });
 
@@ -119,12 +129,12 @@ public class MainActivity extends AppCompatActivity {
                 }
                 password = etPassword.getText().toString();
 
-                    if(getSharedPreferences("myPrefs", Context.MODE_PRIVATE).getString("PHOTO11", null)!=null) {
-                        zdjecie1 = getSharedPreferences("myPrefs", Context.MODE_PRIVATE).getString("PHOTO11", null);
-                    }
-                    if(getSharedPreferences("myPrefs", Context.MODE_PRIVATE).getString("PHOTO12", null)!=null) {
-                        zdjecie2 = getSharedPreferences("myPrefs", Context.MODE_PRIVATE).getString("PHOTO12", null);
-                    }
+                if (getSharedPreferences("myPrefs", Context.MODE_PRIVATE).getString("PHOTO11", null) != null) {
+                    zdjecie1 = getSharedPreferences("myPrefs", Context.MODE_PRIVATE).getString("PHOTO11", null);
+                }
+                if (getSharedPreferences("myPrefs", Context.MODE_PRIVATE).getString("PHOTO12", null) != null) {
+                    zdjecie2 = getSharedPreferences("myPrefs", Context.MODE_PRIVATE).getString("PHOTO12", null);
+                }
                 //Wybor czynnosci
                 if (rbTabor.isChecked()) {
                     czynnosc = rbTabor.getText().toString();
@@ -175,11 +185,12 @@ public class MainActivity extends AppCompatActivity {
                 Log.d("Stan Naczepy", stanNaczepy);
                 Log.d("Stan przestrzeni", stanPrzestrzeni);
                 Log.d("Wyposazenie", wyposazenie);
-                opis = "Protokolant: "+name + "<br>" +
-                        "Nazwa czynnosci: "+ czynnosc + "<br>" + "Rodzaj czynnosci: " + rodzaj + "<br>" +
+                opis = "Protokolant: " + name + "<br>" +
+                        "Nazwa czynnosci: " + czynnosc + "<br>" + "Rodzaj czynnosci: " + rodzaj + "<br>" +
                         "Nr rejestracyjny: " + nrRej + "<br>" + "Stan naczepy: " + stanNaczepy + "<br>" +
                         "Stan przestrzeni: " + stanPrzestrzeni + "<br>" + "Wyposazenie: " + wyposazenie + "<br>";
 
+                Log.e("zdjecie1", zdjecie1);
                 Response.Listener<String> responseListener = new Response.Listener<String>() {
 
                     @Override
@@ -192,12 +203,11 @@ public class MainActivity extends AppCompatActivity {
                                 SharedPreferences prefs = getSharedPreferences("myPrefs", Context.MODE_PRIVATE);
                                 SharedPreferences.Editor editor = prefs.edit();
                                 editor.clear().commit();
-                                Toast.makeText(getApplicationContext(), "Pomyślnie wysłano",Toast.LENGTH_LONG).show();
+                                Toast.makeText(getApplicationContext(), "Pomyślnie wysłano", Toast.LENGTH_LONG).show();
                                 finish();
                                 startActivity(getIntent());
-                            }
-                            else{
-                                Toast.makeText(getApplicationContext(), "Upewnij się, że haslo i nr rejestracyjny sa poprawne.",Toast.LENGTH_LONG).show();
+                            } else {
+                                Toast.makeText(getApplicationContext(), "Upewnij się, że haslo i nr rejestracyjny sa poprawne.", Toast.LENGTH_LONG).show();
                             }
                         } catch (JSONException e) {
                             e.printStackTrace();
@@ -211,9 +221,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
 
-
         });
-
 
 
     }
@@ -222,7 +230,7 @@ public class MainActivity extends AppCompatActivity {
         rbTak1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(rbTak1.isChecked()){
+                if (rbTak1.isChecked()) {
                     //textview czy zrobic zdjecie widoczny
                     buttonZdjecie.setVisibility(View.GONE);
                     rbTak2.setVisibility(View.VISIBLE);
@@ -231,7 +239,7 @@ public class MainActivity extends AppCompatActivity {
                     twZdjecie.setVisibility(View.VISIBLE);
                 }
 
-                if(rbNie1.isChecked()){
+                if (rbNie1.isChecked()) {
                     buttonZdjecie.setVisibility(View.VISIBLE);
                     rbTak2.setVisibility(View.GONE);
                     rbNie2.setVisibility(View.GONE);
@@ -244,7 +252,7 @@ public class MainActivity extends AppCompatActivity {
         rbNie1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(rbTak1.isChecked()){
+                if (rbTak1.isChecked()) {
                     //textview czy zrobic zdjecie widoczny
                     buttonZdjecie.setVisibility(View.GONE);
                     rbTak2.setVisibility(View.VISIBLE);
@@ -252,7 +260,7 @@ public class MainActivity extends AppCompatActivity {
                     etOpisUszk.setVisibility(View.GONE);
                 }
 
-                if(rbNie1.isChecked()){
+                if (rbNie1.isChecked()) {
                     buttonZdjecie.setVisibility(View.VISIBLE);
                     rbTak2.setVisibility(View.GONE);
                     rbNie2.setVisibility(View.GONE);
@@ -264,12 +272,12 @@ public class MainActivity extends AppCompatActivity {
         rbTak2.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(rbTak2.isChecked()){
+                if (rbTak2.isChecked()) {
                     //textview czy zrobic zdjecie widoczny
                     buttonZdjecie.setVisibility(View.VISIBLE);
                 }
 
-                if(rbNie2.isChecked()){
+                if (rbNie2.isChecked()) {
                     buttonZdjecie.setVisibility(View.GONE);
                 }
             }
@@ -277,12 +285,12 @@ public class MainActivity extends AppCompatActivity {
         rbNie2.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(!rbTak2.isChecked()){
+                if (!rbTak2.isChecked()) {
                     //textview czy zrobic zdjecie widoczny
                     buttonZdjecie.setVisibility(View.VISIBLE);
                 }
 
-                if(rbNie2.isChecked()){
+                if (rbNie2.isChecked()) {
                     buttonZdjecie.setVisibility(View.GONE);
                     Log.d("NEJE", "HEHEHE");
                 }
@@ -293,7 +301,7 @@ public class MainActivity extends AppCompatActivity {
         rbTak3.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(rbTak3.isChecked()){
+                if (rbTak3.isChecked()) {
                     //textview czy zrobic zdjecie widoczny
                     rbTak4.setVisibility(View.VISIBLE);
                     rbNie4.setVisibility(View.VISIBLE);
@@ -302,7 +310,7 @@ public class MainActivity extends AppCompatActivity {
                     twZdjecie2.setVisibility(View.VISIBLE);
                 }
 
-                if(rbNie3.isChecked()){
+                if (rbNie3.isChecked()) {
                     buttonZdjecie2.setVisibility(View.VISIBLE);
                     rbTak4.setVisibility(View.GONE);
                     rbNie4.setVisibility(View.GONE);
@@ -315,14 +323,14 @@ public class MainActivity extends AppCompatActivity {
         rbNie3.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(rbTak3.isChecked()){
+                if (rbTak3.isChecked()) {
                     //textview czy zrobic zdjecie widoczny
                     rbTak4.setVisibility(View.VISIBLE);
                     rbNie4.setVisibility(View.VISIBLE);
                     etOpisUszk2.setVisibility(View.GONE);
                 }
 
-                if(rbNie3.isChecked()){
+                if (rbNie3.isChecked()) {
                     buttonZdjecie2.setVisibility(View.VISIBLE);
                     rbTak4.setVisibility(View.GONE);
                     rbNie4.setVisibility(View.GONE);
@@ -334,12 +342,12 @@ public class MainActivity extends AppCompatActivity {
         rbTak4.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(rbTak4.isChecked()){
+                if (rbTak4.isChecked()) {
                     //textview czy zrobic zdjecie widoczny
                     buttonZdjecie2.setVisibility(View.VISIBLE);
                 }
 
-                if(rbNie4.isChecked()){
+                if (rbNie4.isChecked()) {
                     buttonZdjecie2.setVisibility(View.GONE);
                 }
             }
@@ -347,12 +355,12 @@ public class MainActivity extends AppCompatActivity {
         rbNie4.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(rbTak4.isChecked()){
+                if (rbTak4.isChecked()) {
                     //textview czy zrobic zdjecie widoczny
                     buttonZdjecie2.setVisibility(View.VISIBLE);
                 }
 
-                if(rbNie4.isChecked()){
+                if (rbNie4.isChecked()) {
                     buttonZdjecie2.setVisibility(View.GONE);
                 }
             }
@@ -361,16 +369,16 @@ public class MainActivity extends AppCompatActivity {
         rbTak5.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(rbTak5.isChecked()){
-                    etOpisBrak.setVisibility(View.GONE );
+                if (rbTak5.isChecked()) {
+                    etOpisBrak.setVisibility(View.GONE);
                 }
             }
         });
         rbNie5.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(rbNie5.isChecked()){
-                    etOpisBrak.setVisibility(View.VISIBLE );
+                if (rbNie5.isChecked()) {
+                    etOpisBrak.setVisibility(View.VISIBLE);
                 }
 
             }
@@ -416,7 +424,7 @@ public class MainActivity extends AppCompatActivity {
         rbTak3 = (RadioButton) findViewById(R.id.radioButton11);
         rbNie3 = (RadioButton) findViewById(R.id.radioButton12);
         // Jesli nie to opisujemy uszkodzenie i obligatoryjnie robimy zdjecie
-        etOpisUszk2= (EditText) findViewById(R.id.editText6);
+        etOpisUszk2 = (EditText) findViewById(R.id.editText6);
         // Dodajemy button dodaj zdjecie
         buttonZdjecie2 = (Button) findViewById(R.id.button2);
         twZdjecie2 = (TextView) findViewById(R.id.textView9);
@@ -433,9 +441,10 @@ public class MainActivity extends AppCompatActivity {
         etOpisBrak = (EditText) findViewById(R.id.editText7);
         buttonZakoncz = (Button) findViewById(R.id.button3);
     }
+
     /**
      * Checking device has camera hardware or not
-     * */
+     */
     private boolean isDeviceSupportCamera() {
         if (getApplicationContext().getPackageManager().hasSystemFeature(
                 PackageManager.FEATURE_CAMERA)) {
@@ -468,6 +477,7 @@ public class MainActivity extends AppCompatActivity {
         }
         return false;
     }
+
     private void captureImage() {
 
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
@@ -507,10 +517,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-
     /**
      * Receiving activity result method will be called after closing the camera
-     * */
+     */
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         // if the result is capturing Image
@@ -559,11 +568,11 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void launchUploadActivity(boolean isImage){
+    private void launchUploadActivity(boolean isImage) {
         Intent i = new Intent(MainActivity.this, UploadActivity.class);
         i.putExtra("filePath", fileUri.getPath());
         i.putExtra("isImage", isImage);
-        i.putExtra("image",imagePosition);
+        i.putExtra("image", imagePosition);
         startActivity(i);
     }
 
@@ -614,5 +623,62 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return mediaFile;
+    }
+
+    private void requestPermission() {
+        // Here, thisActivity is the current activity
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.CAMERA)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            // Should we show an explanation?
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.CAMERA)) {
+
+                // Show an explanation to the user *asynchronously* -- don't block
+                // this thread waiting for the user's response! After the user
+                // sees the explanation, try again to request the permission.
+
+            } else {
+
+                // No explanation needed, we can request the permission.
+
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.CAMERA},
+                        MY_PERMISSIONS_REQUEST_READ_CONTACTS);
+
+                // MY_PERMISSIONS_REQUEST_READ_CONTACTS is an
+                // app-defined int constant. The callback method gets the
+                // result of the request.
+            }
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case MY_PERMISSIONS_REQUEST_READ_CONTACTS: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    captureImage();
+
+                } else {
+
+                    // permission denied, boo! Disable the
+                    // functionality that depends on this permission.
+                }
+                return;
+            }
+
+            // other 'case' lines to check for other
+            // permissions this app might request
+        }
+    }
+
+    public boolean isCameraAllowed() {
+        return ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED;
     }
 }
